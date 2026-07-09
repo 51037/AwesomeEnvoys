@@ -55,15 +55,24 @@ public class MessageKeys implements SettingsHolder {
 
     public static final Property<String> envoy_force_ended = newProperty("envoys.force-ended", "{prefix}<red>You have just ended the envoy.");
 
-    public static final Property<String> envoy_warning = newProperty("envoys.warning", "{prefix}<red>[<dark_red>ALERT<red>] <gray>There is an envoy event happening in <gold>{time}.");
+    @Comment("A list of available placeholders: {time}, {x}, {z}, {world}")
+    public static final Property<String> envoy_warning = newProperty("envoys.warning", "{prefix}<red>[<dark_red>ALERT<red>] <gray>Supply drop incoming in <gold>{time} <gray>near <gold>{x}, {z}<gray>. Fight for it!");
 
+    @Comment("A list of available placeholders: {amount}, {x}, {z}, {world}")
     public static final Property<List<String>> envoy_started = newListProperty("envoys.started.list", List.of(
-            "{prefix}<gray>An envoy event has just started. <gold>{amount} <gray>crates have spawned around spawn for 5m."
+            "{prefix}<gray>A supply drop has begun! <gold>{amount} <gray>crates are falling near <gold>{x}, {z}<gray>. Go get them!"
     ));
 
+    @Comment("A list of available placeholders: {starter}, {amount}, {x}, {z}, {world}")
     public static final Property<List<String>> envoy_started_player = newListProperty("envoys.started-player.list", List.of(
-            "{prefix}<gray>An envoy event has just been started by {starter}. <gold>{amount} <gray>crates have spawned around spawn for 5m."
+            "{prefix}<gray>A supply drop was called in by {starter}! <gold>{amount} <gray>crates are falling near <gold>{x}, {z}<gray>. Go get them!"
     ));
+
+    @Comment("Boss bar title before the event starts. A list of available placeholders: {time}, {x}, {z}, {world}, {arrow}")
+    public static final Property<String> boss_bar_countdown = newProperty("envoys.boss-bar.countdown", "<red>📦 <gray>Supply Drop at <gold>{x}, {z} <gray>in <gold>{time}");
+
+    @Comment("Boss bar title during the event. A list of available placeholders: {arrow}, {distance}, {x}, {z}, {world}")
+    public static final Property<String> boss_bar_active = newProperty("envoys.boss-bar.active", "<red>📦 <gray>Supply Drop <gold>{arrow} <gray>- <gold>{distance}m");
 
     public static final Property<List<String>> envoys_remaining = newListProperty("envoys.left", List.of(
             "{prefix}<gold>{player} <gray>has just found a tier envoy. There are now <gold>{amount} <gray>left to find."

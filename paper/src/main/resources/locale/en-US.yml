@@ -23,9 +23,13 @@ envoys:
     force-start: '{prefix}<gray>You have just started the envoy.'
     not-started: '{prefix}<red>There is no envoy event going on at this time.'
     force-ended: '{prefix}<red>You have just ended the envoy.'
-    warning: '{prefix}<red>[<dark_red>ALERT<red>] <gray>There is an envoy event happening in <gold>{time}.'
-    started: '{prefix}<gray>An envoy event has just started. <gold>{amount} <gray>crates have
-        spawned around spawn for 5m.'
+    warning: '{prefix}<red>[<dark_red>ALERT<red>] <gray>Supply drop incoming in <gold>{time}
+        <gray>near <gold>{x}, {z}<gray>. Fight for it!'
+    started: '{prefix}<gray>A supply drop has begun! <gold>{amount} <gray>crates are falling
+        near <gold>{x}, {z}<gray>. Go get them!'
+    boss-bar:
+        countdown: '<red>📦 <gray>Supply Drop at <gold>{x}, {z} <gray>in <gold>{time}'
+        active: '<red>📦 <gray>Supply Drop <gold>{arrow} <gray>- <gold>{distance}m'
     left: '{prefix}<gold>{player} <gray>has just found a tier envoy. There are now <gold>{amount}
         <gray>left to find.'
     ended: '{prefix}<red>The envoy event has ended. Thanks for playing and please come

@@ -13,6 +13,7 @@ import com.badbones69.crazyenvoys.listeners.EnvoyClickListener;
 import com.badbones69.crazyenvoys.listeners.FireworkDamageListener;
 import com.badbones69.crazyenvoys.listeners.FlareClickListener;
 import com.badbones69.crazyenvoys.support.placeholders.PlaceholderAPISupport;
+import com.badbones69.crazyenvoys.tasks.BossBarManager;
 import com.ryderbelserion.fusion.core.api.constants.ModSupport;
 import com.ryderbelserion.fusion.core.api.enums.Level;
 import com.ryderbelserion.fusion.paper.FusionPaper;
@@ -48,6 +49,8 @@ public class CrazyEnvoys extends JavaPlugin {
 
     private CrazyManager crazyManager;
 
+    private BossBarManager bossBarManager;
+
     private PaperFileManager fileManager;
     private FusionPaper fusion;
 
@@ -74,6 +77,9 @@ public class CrazyEnvoys extends JavaPlugin {
         this.crazyManager = new CrazyManager();
         this.crazyManager.load();
 
+        this.bossBarManager = new BossBarManager();
+        this.bossBarManager.start();
+
         final PluginManager pluginManager = getServer().getPluginManager();
 
         pluginManager.registerEvents(new EnvoyEditListener(), this);
@@ -98,6 +104,8 @@ public class CrazyEnvoys extends JavaPlugin {
                 this.editorSettings.removeFakeBlocks();
             }
         }
+
+        if (this.bossBarManager != null) this.bossBarManager.stop();
 
         if (this.crazyManager.isEnvoyActive()) {
             EnvoyEndEvent event = new EnvoyEndEvent(EnvoyEndReason.SHUTDOWN);
@@ -140,5 +148,9 @@ public class CrazyEnvoys extends JavaPlugin {
 
     public final CrazyManager getCrazyManager() {
         return this.crazyManager;
+    }
+
+    public final BossBarManager getBossBarManager() {
+        return this.bossBarManager;
     }
 }

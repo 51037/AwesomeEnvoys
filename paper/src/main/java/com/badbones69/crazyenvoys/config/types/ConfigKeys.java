@@ -122,6 +122,51 @@ public class ConfigKeys implements SettingsHolder {
     @Comment("The minimum distance from the middle the envoys will fall from the center.")
     public static final Property<Integer> envoys_min_radius = newProperty("envoys.generation.random-locations.min-radius", 20);
 
+    @Comment({
+            "Cluster mode picks a random drop zone within zone-radius of the center each event,",
+            "then drops every crate within spread-radius of that zone. Players are told the zone",
+            "coordinates ahead of time so they can race and fight for the drop.",
+            "Note: Requires random-locations to be enabled."
+    })
+    public static final Property<Boolean> envoys_cluster_toggle = newProperty("envoys.generation.random-locations.cluster.toggle", true);
+
+    @Comment("How far from the center (in blocks, +/- x and z) the drop zone can be chosen.")
+    public static final Property<Integer> envoys_cluster_zone_radius = newProperty("envoys.generation.random-locations.cluster.zone-radius", 1000);
+
+    @Comment("How tightly the crates cluster around the drop zone (in blocks).")
+    public static final Property<Integer> envoys_cluster_spread_radius = newProperty("envoys.generation.random-locations.cluster.spread-radius", 64);
+
+    @Comment("The minimum distance the drop zone must be from the center, so drops never land on spawn.")
+    public static final Property<Integer> envoys_cluster_min_distance = newProperty("envoys.generation.random-locations.cluster.min-distance-from-center", 100);
+
+    @Comment({
+            "The boss bar guides players to the drop zone. Before the event it shows the zone",
+            "coordinates and a countdown. During the event it shows a directional arrow and the",
+            "distance to the nearest unclaimed crate."
+    })
+    public static final Property<Boolean> envoys_boss_bar_toggle = newProperty("envoys.boss-bar.toggle", true);
+
+    @Comment("If the boss bar should also appear before the event starts, counting down to the drop.")
+    public static final Property<Boolean> envoys_boss_bar_countdown_toggle = newProperty("envoys.boss-bar.countdown.toggle", true);
+
+    @Comment("How long before the event the countdown boss bar appears. i.e 30m or 1h")
+    public static final Property<String> envoys_boss_bar_countdown_duration = newProperty("envoys.boss-bar.countdown.duration", "30m");
+
+    @Comment("The color of the boss bar. Available: PINK, BLUE, RED, GREEN, YELLOW, PURPLE, WHITE")
+    public static final Property<String> envoys_boss_bar_color = newProperty("envoys.boss-bar.color", "RED");
+
+    @Comment("The overlay of the boss bar. Available: PROGRESS, NOTCHED_6, NOTCHED_10, NOTCHED_12, NOTCHED_20")
+    public static final Property<String> envoys_boss_bar_overlay = newProperty("envoys.boss-bar.overlay", "PROGRESS");
+
+    @Comment("How often the boss bar updates, in ticks. 20 ticks = 1 second.")
+    public static final Property<Integer> envoys_boss_bar_update_interval = newProperty("envoys.boss-bar.update-interval-ticks", 5);
+
+    @Comment({
+            "The distance used to fill the boss bar progress while tracking a crate.",
+            "At this distance or farther the bar is empty, at 0 blocks it is full."
+    })
+    public static final Property<Integer> envoys_boss_bar_max_tracking_distance = newProperty("envoys.boss-bar.max-tracking-distance", 1000);
+
     @Comment("If all drop locations should be broadcast when an envoy starts.")
     public static final Property<Boolean> envoys_locations_broadcast = newProperty("envoys.broadcast", false);
 

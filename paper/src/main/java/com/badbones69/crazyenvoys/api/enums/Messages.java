@@ -73,6 +73,8 @@ public enum Messages {
     second(MessageKeys.time_placeholder_second),
     envoy_locations(MessageKeys.envoy_locations),
     location_format(MessageKeys.location_format),
+    boss_bar_countdown(MessageKeys.boss_bar_countdown),
+    boss_bar_active(MessageKeys.boss_bar_active),
 
     error_migrating(MessageKeys.error_migrating),
     migration_not_available(MessageKeys.migration_not_available),

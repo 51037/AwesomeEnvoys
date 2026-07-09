@@ -88,6 +88,7 @@ public class CrazyManager {
     private HologramManager holograms;
     private Location center;
     private String centerString;
+    private Location dropZone;
 
     private final Map<Block, Tier> activeEnvoys = new HashMap<>();
     private final Map<Location, ScheduledTask> activeSignals = new HashMap<>();
@@ -178,6 +179,8 @@ public class CrazyManager {
         if (Calendar.getInstance().after(getNextEnvoy())) setEnvoyActive(false);
 
         loadCenter();
+
+        loadDropZone();
 
         if (this.config.getProperty(ConfigKeys.envoys_run_time_toggle)) {
             Calendar cal = Calendar.getInstance();
@@ -369,9 +372,11 @@ public class CrazyManager {
                         check.clear(Calendar.MILLISECOND);
 
                         if (check.compareTo(cal) == 0) {
-                            Messages.warning.broadcast(config.getProperty(ConfigKeys.envoys_ignore_behaviour_warning), Map.of(
-                                    "{time}", getNextEnvoyTime()
-                            ));
+                            final Map<String, String> placeholders = getZonePlaceholders();
+
+                            placeholders.put("{time}", getNextEnvoyTime());
+
+                            Messages.warning.broadcast(config.getProperty(ConfigKeys.envoys_ignore_behaviour_warning), placeholders);
                         }
                     }
 
@@ -389,6 +394,8 @@ public class CrazyManager {
                                 setNextEnvoy(getEnvoyCooldown());
 
                                 resetWarnings();
+
+                                selectDropZone();
 
                                 return;
                             }
@@ -618,8 +625,13 @@ public class CrazyManager {
             maxSpawns = this.config.getProperty(ConfigKeys.envoys_random_locations) ? this.config.getProperty(ConfigKeys.envoys_max_drops) : this.locationSettings.getActiveLocations().size();
         }
 
-        if (maxSpawns > (Math.pow(this.config.getProperty(ConfigKeys.envoys_max_radius) * 2, 2) - Math.pow((this.config.getProperty(ConfigKeys.envoys_min_radius) * 2 + 1), 2))) {
-            maxSpawns = (int) (Math.pow(this.config.getProperty(ConfigKeys.envoys_max_radius) * 2, 2) - Math.pow((this.config.getProperty(ConfigKeys.envoys_min_radius) * 2 + 1), 2));
+        final boolean cluster = isClusterEnabled();
+
+        final int effectiveRadius = cluster ? this.config.getProperty(ConfigKeys.envoys_cluster_spread_radius) : this.config.getProperty(ConfigKeys.envoys_max_radius);
+        final int effectiveMinRadius = cluster ? 0 : this.config.getProperty(ConfigKeys.envoys_min_radius);
+
+        if (maxSpawns > (Math.pow(effectiveRadius * 2, 2) - Math.pow((effectiveMinRadius * 2 + 1), 2))) {
+            maxSpawns = (int) (Math.pow(effectiveRadius * 2, 2) - Math.pow((effectiveMinRadius * 2 + 1), 2));
 
             this.fusion.log(Level.WARNING, "Crate spawn amount is larger than the area that was provided. Spawning %s crates instead.", maxSpawns);
         }
@@ -627,12 +639,22 @@ public class CrazyManager {
         if (this.config.getProperty(ConfigKeys.envoys_random_locations)) {
             if (!testCenter()) return new ArrayList<>();
 
-            List<Block> minimumRadiusBlocks = getBlocks(this.center.clone(), this.config.getProperty(ConfigKeys.envoys_min_radius));
+            if (cluster && this.dropZone == null) selectDropZone();
 
-            while (this.locationSettings.getDropLocations().size() < maxSpawns) {
-                int maxRadius = this.config.getProperty(ConfigKeys.envoys_max_radius);
-                Location location = this.center.clone();
-                location.add(-(maxRadius) + ThreadLocalRandom.current().nextInt(maxRadius * 2), 0, -(maxRadius) + ThreadLocalRandom.current().nextInt(maxRadius * 2));
+            final Location spawnCenter = cluster && this.dropZone != null ? this.dropZone.clone() : this.center.clone();
+
+            List<Block> minimumRadiusBlocks = cluster ? new ArrayList<>() : getBlocks(this.center.clone(), this.config.getProperty(ConfigKeys.envoys_min_radius));
+
+            // Capped so a zone with unusable terrain (open water, etc.) spawns what it can
+            // instead of hanging the server hunting for spots that don't exist.
+            int attempts = 0;
+            final int maxAttempts = Math.max(1, maxSpawns) * 30;
+
+            while (this.locationSettings.getDropLocations().size() < maxSpawns && attempts < maxAttempts) {
+                attempts++;
+
+                Location location = spawnCenter.clone();
+                location.add(-(effectiveRadius) + ThreadLocalRandom.current().nextInt(effectiveRadius * 2), 0, -(effectiveRadius) + ThreadLocalRandom.current().nextInt(effectiveRadius * 2));
                 location = location.getWorld().getHighestBlockAt(location).getLocation();
 
                 if (!location.getChunk().isLoaded() && !location.getChunk().load()) continue;
@@ -647,6 +669,10 @@ public class CrazyManager {
                 if (block.getType() != Material.AIR) block = block.getLocation().add(0, 1, 0).getBlock();
 
                 this.locationSettings.addDropLocations(block);
+            }
+
+            if (this.locationSettings.getDropLocations().size() < maxSpawns) {
+                this.fusion.log(Level.WARNING, "Only found {} of {} usable drop locations around {}, {}.", this.locationSettings.getDropLocations().size(), maxSpawns, spawnCenter.getBlockX(), spawnCenter.getBlockZ());
             }
 
             Files.users.getConfiguration().set("Locations.Spawned", getBlockList(locationSettings.getDropLocations()));
@@ -732,6 +758,8 @@ public class CrazyManager {
 
             resetWarnings();
 
+            selectDropZone();
+
             EnvoyEndEvent event = new EnvoyEndEvent(EnvoyEndReason.NO_LOCATIONS_FOUND);
 
             this.pluginManager.callEvent(event);
@@ -759,7 +787,7 @@ public class CrazyManager {
 
         int max = dropLocations.size();
 
-        final Map<String, String> placeholders = new HashMap<>();
+        final Map<String, String> placeholders = getZonePlaceholders();
 
         placeholders.put("{amount}", String.valueOf(max));
 
@@ -879,6 +907,8 @@ public class CrazyManager {
             setNextEnvoy(getEnvoyCooldown());
 
             resetWarnings();
+
+            selectDropZone();
         }
 
         this.coolDownSettings.clearCoolDowns();
@@ -952,6 +982,104 @@ public class CrazyManager {
 
         Files.users.getConfiguration().set("Center", this.centerString);
         Files.users.save();
+    }
+
+    /**
+     * @return The drop zone the next/current envoy clusters around, or the center if none is selected.
+     */
+    public Location getDropZone() {
+        return this.dropZone != null ? this.dropZone : this.center;
+    }
+
+    /**
+     * @return True if random locations and cluster mode are both enabled.
+     */
+    public boolean isClusterEnabled() {
+        return this.config.getProperty(ConfigKeys.envoys_random_locations) && this.config.getProperty(ConfigKeys.envoys_cluster_toggle);
+    }
+
+    /**
+     * Placeholders pointing at the announced drop zone, shared by the warning
+     * broadcasts, the start broadcasts and the boss bar.
+     */
+    public Map<String, String> getZonePlaceholders() {
+        final Map<String, String> placeholders = new HashMap<>();
+
+        final Location zone = getDropZone();
+
+        placeholders.put("{x}", String.valueOf(zone.getBlockX()));
+        placeholders.put("{z}", String.valueOf(zone.getBlockZ()));
+        placeholders.put("{world}", zone.getWorld() != null ? zone.getWorld().getName() : "");
+
+        return placeholders;
+    }
+
+    /**
+     * Picks the drop zone for the next envoy event: a random spot within the zone radius
+     * of the center, at least the minimum distance away from it, preferring dry land.
+     * Persisted so the coordinates already announced to players survive a restart.
+     */
+    public void selectDropZone() {
+        if (!isClusterEnabled() || !testCenter()) return;
+
+        final World world = this.center.getWorld();
+
+        final int zoneRadius = Math.max(1, this.config.getProperty(ConfigKeys.envoys_cluster_zone_radius));
+        final int minDistance = Math.min(this.config.getProperty(ConfigKeys.envoys_cluster_min_distance), zoneRadius - 1);
+        final int spread = this.config.getProperty(ConfigKeys.envoys_cluster_spread_radius);
+
+        Location zone = null;
+
+        for (int attempt = 0; attempt < 10; attempt++) {
+            int x = this.center.getBlockX() - zoneRadius + ThreadLocalRandom.current().nextInt(zoneRadius * 2 + 1);
+            int z = this.center.getBlockZ() - zoneRadius + ThreadLocalRandom.current().nextInt(zoneRadius * 2 + 1);
+
+            if (Math.abs(x - this.center.getBlockX()) < minDistance && Math.abs(z - this.center.getBlockZ()) < minDistance) continue;
+
+            // Keep the whole cluster inside the world border.
+            final WorldBorder border = world.getWorldBorder();
+            final double limit = border.getSize() / 2 - spread - 16;
+
+            if (limit > 0) {
+                x = (int) Math.max(border.getCenter().getX() - limit, Math.min(border.getCenter().getX() + limit, x));
+                z = (int) Math.max(border.getCenter().getZ() - limit, Math.min(border.getCenter().getZ() + limit, z));
+            }
+
+            final Block block = world.getHighestBlockAt(x, z);
+
+            zone = block.getLocation().add(0.5, 1, 0.5);
+
+            final Material type = block.getType();
+
+            if (type != Material.WATER && type != Material.LAVA) break;
+        }
+
+        if (zone == null) return;
+
+        this.dropZone = zone;
+
+        Files.users.getConfiguration().set("Drop-Zone", Methods.getUnBuiltLocation(zone));
+        Files.users.save();
+
+        this.fusion.log(Level.INFO, "Next drop zone selected at {}, {} in world {}.", zone.getBlockX(), zone.getBlockZ(), world.getName());
+    }
+
+    private void loadDropZone() {
+        if (!isClusterEnabled()) return;
+
+        final String stored = Files.users.getConfiguration().getString("Drop-Zone");
+
+        if (stored != null && !stored.isBlank()) {
+            final Location zone = Methods.getBuiltLocation(stored);
+
+            if (zone.getWorld() != null) {
+                this.dropZone = zone;
+
+                return;
+            }
+        }
+
+        selectDropZone();
     }
 
     /**
@@ -1128,7 +1256,7 @@ public class CrazyManager {
         return locations;
     }
 
-    private int getTimeSeconds(String time) {
+    public int getTimeSeconds(String time) {
         int seconds = 0;
 
         for (String i : time.split(" ")) {
