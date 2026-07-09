@@ -182,7 +182,7 @@ public class EnvoyClickListener implements Listener {
                     final ConsoleCommandSender sender = server.getConsoleSender();
 
                     for (final String command : prize.getCommands()) {
-                        server.dispatchCommand(sender, fusion.parse(player, command, placeholders));
+                        server.dispatchCommand(sender, fusion.parse(player, command, values));
                     }
                 }
             }.runNow();
