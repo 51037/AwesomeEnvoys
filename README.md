@@ -1,61 +1,39 @@
-<center><div align="center">
+# AwesomeEnvoys
 
-![CrazyEnvoys](https://raw.githubusercontent.com/Crazy-Crew/Branding/main/crazyenvoys/banner/webp/banner.webp)
+A fork of [CrazyEnvoys](https://github.com/Crazy-Crew/CrazyEnvoys) that turns envoy events into Rust-style supply drops for vanilla survival servers. Instead of scattering crates around spawn, every event announces a random drop zone somewhere in the wilderness and sends the whole server racing to it.
 
-[![][jenkins-shield]][jenkins-url]
-[![][discord-shield]][discord-url]
-[![][contributors-shield]][contributors-url]
-[![][forks-shield]][forks-url]
-[![][stars-shield]][stars-url]
-[![][issues-shield]][issues-url]
-[![][license-shield]][license-url]
+## What this fork adds
 
-</div></center>
+- **Random drop zones** — each event picks a random spot within a configurable radius of your center (default ±1000 blocks x/z, at least 100 from center) and clusters every crate within a tight spread (default 64 blocks) of that point. Open water is avoided when possible and the zone always fits inside the world border.
+- **Coordinates in every announcement** — the zone is chosen when the event is scheduled, so warnings tell players exactly where to go: *"Supply drop incoming in 30m near 640, -872. Fight for it!"*
+- **Boss bar navigation** — a per-player boss bar appears ahead of the event (default 30 minutes) with the zone coordinates and a countdown. Once crates land, it switches to a live directional arrow (↑ ↗ → ↘ ↓ ↙ ← ↖) and the distance to the nearest unclaimed crate, re-targeting as crates get looted. The progress bar fills as the drop approaches, then tracks how close you are.
+- **Safer generation** — the random-location search is capped, so an unlucky zone (e.g. mostly water) spawns what it can instead of hanging the server.
+
+Everything is configurable: cluster sizes under `envoys.generation.random-locations.cluster` and the boss bar under `envoys.boss-bar` in `config.yml`; all announcement and boss bar text in `messages.yml`.
 
 ## Installation
-1) Download the update from modrinth/hangar for your version of Minecraft.
-2) You must be using at least https://papermc.io
-3) The file you downloaded goes in the `plugins` folder.
-4) Restart the server.
-5) Create new files in the `tiers` folder, and look at the existing files in there to help figure out how to use the plugin.
-6) Edit `config.yml` and `messages.yml`
-7) Execute `/crazyenvoys reload`
-8) Execute `/crazyenvoys start`
-9) View the documentation @ https://docs.crazycrew.us/mods/crazyenvoys/
 
-## Features
-- https://docs.crazycrew.us/mods/crazyenvoys/#current-features/
+1) Build the jar (see below) or grab it from this repo's releases.
+2) You must be running a [Paper](https://papermc.io) server.
+3) Drop the jar in the `plugins` folder and restart the server.
+4) Set the drop origin with `/crazyenvoys center` (defaults to world spawn).
+5) Configure `config.yml`, `messages.yml`, and the files in the `tiers` folder.
+6) Execute `/crazyenvoys reload`, then `/crazyenvoys start` to test an event.
 
-## Contributing
-- https://docs.crazycrew.us/mods/crazyenvoys/contributing/
+Documentation for the base plugin lives at https://docs.crazycrew.us/mods/crazyenvoys/
 
-## Support
-All support for the plugin is provided on Discord! If a question cannot be answered on the wiki, The next best place is to ask it in the Discord.
+## Building from source
 
-<!--[![Discord](https://discord.com/api/guilds/182615261403283459/widget.png?style=banner2)](https://discord.gg/badbones-s-live-chat-182615261403283459)<br>-->
-[![Discord Invite Button](https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/social/discord-plural_vector.svg)](https://discord.gg/badbones-s-live-chat-182615261403283459)
+Requires JDK 17+ to launch Gradle (the Java 25 compile toolchain downloads automatically):
 
-## Data Collection
-We collect anonymous statistics on how the plugin is used at https://bstats.org/plugin/bukkit/CrazyEnvoy/4537 and is visible to the public.
-If you do not want this anonymous data sent, You currently have to go to the `bStats` folder, and set that to false.
+```
+./gradlew :paper:build
+```
 
-<hr>
+The plugin jar lands in `paper/build/libs/paper.jar`.
 
-## Apex Hosting (ad)
-We're sponsored by Apex Hosting, Click [here](https://billing.apexminecrafthosting.com/aff.php?aff=5511) to get 25% off your first purchase with the code `APEX25` at checkout for Minecraft servers, Satisfactory servers, and more!
+## Credits & license
 
-[jenkins-shield]: https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.crazycrew.us%2Fjob%2FCrazyEnvoys%2F&style=flat&logo=jenkins
-[jenkins-url]: https://ci.crazycrew.us/job/CrazyEnvoys/
+All the crate, tier, flare, and scheduling infrastructure comes from [CrazyEnvoys](https://github.com/Crazy-Crew/CrazyEnvoys) by the Crazy-Crew team. Like the original, this fork is licensed under the [MIT License](LICENSE).
 
-[contributors-shield]: https://img.shields.io/github/contributors-anon/Crazy-Crew/CrazyEnvoys.svg?style=flat&logo=appveyor
-[contributors-url]: https://github.com/Crazy-Crew/CrazyEnvoys/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/Crazy-Crew/CrazyEnvoys.svg?style=flat&logo=appveyor
-[forks-url]: https://github.com/Crazy-Crew/CrazyEnvoys/network/members
-[stars-shield]: https://img.shields.io/github/stars/Crazy-Crew/CrazyEnvoys.svg?style=flat&logo=appveyor
-[stars-url]: https://github.com/Crazy-Crew/CrazyEnvoys/stargazers
-[issues-shield]: https://img.shields.io/github/issues/Crazy-Crew/CrazyEnvoys.svg?style=flat&logo=appveyor
-[issues-url]: https://github.com/Crazy-Crew/CrazyEnvoys/issues
-[license-shield]: https://img.shields.io/github/license/Crazy-Crew/CrazyEnvoys.svg?style=flat&logo=appveyor
-[license-url]: https://github.com/Crazy-Crew/CrazyEnvoys/blob/main/LICENSE
-[discord-shield]: https://img.shields.io/discord/182615261403283459.svg?label=discord&logo=discord
-[discord-url]: https://discord.gg/badbones-s-live-chat-182615261403283459
+The plugin reports anonymous usage statistics to [bStats](https://bstats.org/plugin/bukkit/CrazyEnvoy/4537); set `enabled: false` in the `bStats` folder's config to opt out.
